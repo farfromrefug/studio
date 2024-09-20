@@ -88,12 +88,12 @@ public class DatabaseMetadataService {
             // Otherwise clear unofficial database from official packs metadata
             LOGGER.debug("Cleaning unofficial database.");
             // Remove official packs from unofficial metadata database file
-            for (String uuid : unofficialJsonCache.keySet()) {
-                if (isOfficialPack(uuid)) {
-                    unofficialJsonCache.remove(uuid);
-                    lastModifiedCache = System.currentTimeMillis();
-                }
-            }
+            // for (String uuid : unofficialJsonCache.keySet()) {
+            //     if (isOfficialPack(uuid)) {
+            //         unofficialJsonCache.remove(uuid);
+            //         lastModifiedCache = System.currentTimeMillis();
+            //     }
+            // }
             persistUnofficialDatabase();
         } catch (IOException e) {
             LOGGER.error("Failed to initialize unofficial metadata database", e);
@@ -181,9 +181,9 @@ public class DatabaseMetadataService {
 
     public void refreshUnofficialCache(DatabasePackMetadata meta) {
         // Refresh unofficial database only if the pack isn't an official one
-        if (isOfficialPack(meta.getUuid())) {
-            return;
-        }
+        // if (isOfficialPack(meta.getUuid())) {
+        //     return;
+        // }
         // Update unofficial database
         String uuid = meta.getUuid();
         LOGGER.debug("Updating unofficial metadata cache for {}", uuid);

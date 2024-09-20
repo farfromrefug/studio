@@ -277,7 +277,7 @@ class PackLibrary extends React.Component {
                 return;
             }
             // Pack is converted and stored in the local library
-            this.props.convertPackInLibrary(pack.uuid, pack.path, format, this.props.settings.allowEnriched, this.context);
+            this.props.convertPackInLibrary(pack.uuid, pack.path, format, true, this.context);
         }
     };
 
@@ -316,7 +316,7 @@ class PackLibrary extends React.Component {
     };
 
     isPackDraggable = (pack) => {
-        return !pack.official;
+        return true;
     };
 
     onCreateNewPackInEditor = (e) => {
