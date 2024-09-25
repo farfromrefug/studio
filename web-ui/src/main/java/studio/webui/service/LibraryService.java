@@ -219,7 +219,7 @@ public class LibraryService {
                 PackAssetsCompression.processCompressed(storyPack);
             }
 
-            String zipName = storyPack.getUuid() + ".converted_" + System.currentTimeMillis() + ".zip";
+            String zipName = storyPack.getUuid() + ".zip";
             Path tmp = tmpDirPath.resolve(zipName);
 
             LOGGER.info("Writing {} format pack, using temporary file: {} metadata: {}", outputFormat, tmp, metadata);
