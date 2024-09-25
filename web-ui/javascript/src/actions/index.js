@@ -292,6 +292,54 @@ export const actionAddToLibrary = (uuid, driver, context, t) => {
                 toast.error(t('toasts.device.busy'));
             });
 };
+export const actionAddToLibraryAndWait = (uuid, driver, context, t) => {
+    return dispatch => mutex.acquire()
+        .then(
+            release => {
+                let toastId = toast(t('toasts.library.adding'), { autoClose: false });
+                return addToLibrary(uuid, driver)
+                    .then(resp => {
+                        return new Promise((resolve, reject) => {
+                            // Monitor transfer progress
+                            let transferId = resp.transferId;
+                            context.eventBus.registerHandler('storyteller.transfer.'+transferId+'.progress', (error, message) => {
+                                console.log("Received `storyteller.transfer."+transferId+".progress` event from vert.x event bus.");
+                                console.log(message.body);
+                                if (message.body.progress < 1) {
+                                    toast.update(toastId, {progress: message.body.progress, autoClose: false});
+                                }
+                            });
+                            context.eventBus.registerHandler('storyteller.transfer.'+transferId+'.done', (error, message) => {
+                                console.log("Received `storyteller.transfer."+transferId+".done` event from vert.x event bus.");
+                                console.log(message.body);
+                                if (message.body.success) {
+                                    toast.update(toastId, {progress: null, type: toast.TYPE.SUCCESS, render: t('toasts.library.added'), autoClose: 5000});
+                                    // Refresh device metadata and packs list
+                                    dispatch(actionRefreshLibrary(t));
+                                } else {
+                                    toast.update(toastId, {progress: null, type: toast.TYPE.ERROR, render: <IssueReportToast content={<>{t('toasts.library.addingFailed')}</>} />, autoClose: false });
+                                }
+                                // Always release the mutex
+                                resolve();
+                            });
+                        })
+                        
+                    })
+                    .then(()=>{
+                        release();
+                    })
+                    .catch(e => {
+                        console.error('failed to add pack to library', e);
+                        toast.update(toastId, { type: toast.TYPE.ERROR, render: <IssueReportToast content={<>{t('toasts.library.addingFailed')}</>} error={e} />, autoClose: false });
+                        // Always release the mutex
+                        release();
+                    });
+            },
+            e => {
+                // Device is busy
+                toast.error(t('toasts.device.busy'));
+            });
+};
 
 export const actionRefreshLibrary = (t) => {
     return dispatch => {

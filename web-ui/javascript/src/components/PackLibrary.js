@@ -21,7 +21,8 @@ import {
     actionUploadToLibrary,
     actionCreatePackInEditor,
     actionLoadSampleInEditor,
-    setAllowEnriched
+    setAllowEnriched,
+    actionAddToLibraryAndWait
 } from "../actions";
 import {AppContext} from "../AppContext";
 import Modal from "./Modal";
@@ -240,6 +241,26 @@ class PackLibrary extends React.Component {
             this.props.addToLibrary(data.uuid, this.state.device.metadata.driver, this.context);
         }
     };
+
+     importAllPacksToLibrary = async () => {
+        const packs  = this.state.device.packs;
+        for (let index = 0; index < packs.length; index++) {
+            const pack = packs[index];
+            await this.props.addToLibraryAndWait(pack.uuid, this.state.device.metadata.driver, this.context);
+        }
+    }
+
+    convertAllToStudio = async () => {
+        const packs  = this.state.library.packs.reduce((acc, group)=>{
+            acc.push(...group.packs)
+            return acc;
+        }, []);
+        const format = 'archive';
+        for (let index = 0; index < packs.length; index++) {
+            const pack = packs[index];
+            await this.props.convertPackInLibrary(pack.uuid, pack.path, format, true, this.context);
+        }
+    }
 
     showAddFileSelector = () => {
         document.getElementById('upload').click();
@@ -481,7 +502,7 @@ class PackLibrary extends React.Component {
                         <input type="file" id="upload" style={{visibility: 'hidden', position: 'absolute'}} onChange={this.packAddFileSelected} />
                         <span title={t('library.local.addPack')} className="btn btn-default glyphicon glyphicon-import" onClick={this.showAddFileSelector}/>
                         <div className="editor-actions">
-                            <p><button className="library-action" onClick={this.onCreateNewPackInEditor}>{t('library.local.empty.link1')}</button> <button className="library-action" onClick={this.onOpenSamplePackInEditor}>{t('library.local.empty.link2')}</button> {t('library.local.empty.suffix')}</p>
+                            <p><button className="library-action" onClick={this.importAllPacksToLibrary}>Import All from device</button><button className="library-action" onClick={this.convertAllToStudio}>Convert all to studio</button><button className="library-action" onClick={this.onCreateNewPackInEditor}>{t('library.local.empty.link1')}</button> <button className="library-action" onClick={this.onOpenSamplePackInEditor}>{t('library.local.empty.link2')}</button> {t('library.local.empty.suffix')}</p>
                         </div>
                     </div>
                     <div className="library-dropzone"
@@ -565,6 +586,7 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
     removeFromDevice: (uuid) => dispatch(actionRemoveFromDevice(uuid, ownProps.t)),
     reorderOnDevice: (uuids) => dispatch(actionReorderOnDevice(uuids, ownProps.t)),
     addToLibrary: (uuid, driver, context) => dispatch(actionAddToLibrary(uuid, driver, context, ownProps.t)),
+    addToLibraryAndWait: (uuid, driver, context) => dispatch(actionAddToLibraryAndWait(uuid, driver, context, ownProps.t)),
     downloadPackFromLibrary: (uuid, path) => dispatch(actionDownloadFromLibrary(uuid, path, ownProps.t)),
     loadPackInEditor: (packData, filename) => dispatch(actionLoadPackInEditor(packData, filename, ownProps.t)),
     convertPackInLibrary: (uuid, path, format, allowEnriched, context) => dispatch(actionConvertInLibrary(uuid, path, format, allowEnriched, context, ownProps.t)),
