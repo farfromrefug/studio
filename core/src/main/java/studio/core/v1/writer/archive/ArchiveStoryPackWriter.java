@@ -109,6 +109,7 @@ public class ArchiveStoryPackWriter implements StoryPackWriter {
 
         // Write file format metadata
         writer.name("format").value("v1");
+        writer.name("uuid").value(pack.getUuid());
 
         // Write (optional) enriched pack metadata
         if (pack.getEnriched() != null) {
