@@ -6,6 +6,9 @@
 
 package studio.core.v1.writer.archive;
 
+import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -18,6 +21,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -104,6 +110,7 @@ public class ArchiveStoryPackWriter implements StoryPackWriter {
 
     private void writeStoryJson(StoryPack pack, FileSystem zipFs, JsonWriter writer, TreeMap<String, byte[]> assets, Optional<DatabasePackMetadata> metadata) throws IOException {
         // Start json document
+        Path assetPath = Files.createDirectories(zipFs.getPath("assets/"));
         writer.setIndent("    ");
         writer.beginObject();
 
@@ -166,10 +173,14 @@ public class ArchiveStoryPackWriter implements StoryPackWriter {
                 writer.nullValue();
             } else {
                 byte[] imageData = node.getImage().getRawData();
-                String extension = node.getImage().getType().getFirstExtension();
-                String assetFileName = SecurityUtils.sha1Hex(imageData) + extension;
+                // String extension = node.getImage().getType().getFirstExtension();
+                String assetFileName = SecurityUtils.sha1Hex(imageData) + ".jpg";
                 writer.value(assetFileName);
-                assets.putIfAbsent(assetFileName, imageData);
+                ByteArrayInputStream bis = new ByteArrayInputStream(imageData);
+                BufferedImage bImage2 = ImageIO.read(bis);
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                ImageIO.write(bImage2, "jpg", bos);
+                assets.putIfAbsent(assetFileName, bos.toByteArray());
             }
             writer.name("audio");
             if (node.getAudio() == null) {
