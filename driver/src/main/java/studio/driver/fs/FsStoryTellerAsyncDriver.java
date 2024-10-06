@@ -217,38 +217,40 @@ public class FsStoryTellerAsyncDriver implements StoryTellerAsyncDriver<FsDevice
 
         return readPackIndex()
                 .thenApply(packUUIDs -> {
-                    try {
+                    List<FsStoryPackInfos> packs = new ArrayList<>();
                         LOGGER.debug("Number of packs in index: {}", packUUIDs.size());
-                        List<FsStoryPackInfos> packs = new ArrayList<>();
                         for (UUID packUUID : packUUIDs) {
-                            FsStoryPackInfos packInfos = new FsStoryPackInfos();
-                            packInfos.setUuid(packUUID);
-                            LOGGER.debug("Pack UUID: {}", packUUID);
+                            try {
+                                FsStoryPackInfos packInfos = new FsStoryPackInfos();
+                                packInfos.setUuid(packUUID);
+                                LOGGER.debug("Pack UUID: {}", packUUID);
 
-                            // Compute .content folder (last 4 bytes of UUID)
-                            String folderName = transformUuid(packUUID.toString());
-                            Path packPath = this.partitionMountPoint.resolve(CONTENT_FOLDER).resolve(folderName);
-                            packInfos.setFolderName(folderName);
+                                // Compute .content folder (last 4 bytes of UUID)
+                                String folderName = transformUuid(packUUID.toString());
+                                Path packPath = this.partitionMountPoint.resolve(CONTENT_FOLDER).resolve(folderName);
+                                packInfos.setFolderName(folderName);
 
-                            // Open 'ni' file
-                            Path niPath = packPath.resolve(NODE_INDEX_FILENAME);
-                            try (InputStream niDis = new BufferedInputStream(Files.newInputStream(niPath))) {
-                                ByteBuffer bb = ByteBuffer.wrap(niDis.readNBytes(512)).order(ByteOrder.LITTLE_ENDIAN);
-                                short version = bb.getShort(2);
-                                packInfos.setVersion(version);
-                                LOGGER.debug("Pack version: {}", version);
+                                // Open 'ni' file
+                                Path niPath = packPath.resolve(NODE_INDEX_FILENAME);
+                                try (InputStream niDis = new BufferedInputStream(Files.newInputStream(niPath))) {
+                                    ByteBuffer bb = ByteBuffer.wrap(niDis.readNBytes(512)).order(ByteOrder.LITTLE_ENDIAN);
+                                    short version = bb.getShort(2);
+                                    packInfos.setVersion(version);
+                                    LOGGER.debug("Pack version: {}", version);
+                                }
+                                // Night mode is available if file 'nm' exists
+                                packInfos.setNightModeAvailable(Files.exists(packPath.resolve(NIGHT_MODE_FILENAME)));
+                                // Compute folder size
+                                packInfos.setSizeInBytes(FileUtils.getFolderSize(packPath));
+
+                                packs.add(packInfos);
+
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                // throw new StoryTellerException("Failed to read pack metadata on device partition", e);
                             }
-                            // Night mode is available if file 'nm' exists
-                            packInfos.setNightModeAvailable(Files.exists(packPath.resolve(NIGHT_MODE_FILENAME)));
-                            // Compute folder size
-                            packInfos.setSizeInBytes(FileUtils.getFolderSize(packPath));
-
-                            packs.add(packInfos);
                         }
-                        return packs;
-                    } catch (IOException e) {
-                        throw new StoryTellerException("Failed to read pack metadata on device partition", e);
-                    }
+                    return packs;
                 });
     }
 
