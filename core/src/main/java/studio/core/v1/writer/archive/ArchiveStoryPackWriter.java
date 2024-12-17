@@ -192,10 +192,12 @@ public class ArchiveStoryPackWriter implements StoryPackWriter {
                 writer.value(assetFileName);
                 assets.putIfAbsent(assetFileName, audioData);
             }
+            boolean hasOkTransition = false;
             writer.name("okTransition");
             if (node.getOkTransition() == null) {
                 writer.nullValue();
             } else {
+                hasOkTransition = true;
                 writer.beginObject();
                 if (!actionNodeToId.containsKey(node.getOkTransition().getActionNode())) {
                     actionNodeToId.put(node.getOkTransition().getActionNode(), UUID.randomUUID().toString());
@@ -204,10 +206,13 @@ public class ArchiveStoryPackWriter implements StoryPackWriter {
                 writer.name("optionIndex").value(node.getOkTransition().getOptionIndex());
                 writer.endObject();
             }
+
+            boolean hasHomeTransition = false;
             writer.name("homeTransition");
             if (node.getHomeTransition() == null) {
                 writer.nullValue();
             } else {
+                hasHomeTransition = true;
                 writer.beginObject();
                 if (!actionNodeToId.containsKey(node.getHomeTransition().getActionNode())) {
                     actionNodeToId.put(node.getHomeTransition().getActionNode(), UUID.randomUUID().toString());
@@ -219,8 +224,8 @@ public class ArchiveStoryPackWriter implements StoryPackWriter {
             writer.name("controlSettings");
             writer.beginObject();
             writer.name("wheel").value(node.getControlSettings().isWheelEnabled());
-            writer.name("ok").value(node.getControlSettings().isOkEnabled());
-            writer.name("home").value(node.getControlSettings().isHomeEnabled());
+            writer.name("ok").value(hasOkTransition && node.getControlSettings().isOkEnabled());
+            writer.name("home").value(hasHomeTransition && node.getControlSettings().isHomeEnabled());
             writer.name("pause").value(node.getControlSettings().isPauseEnabled());
             writer.name("autoplay").value(node.getControlSettings().isAutoJumpEnabled());
             writer.endObject();
