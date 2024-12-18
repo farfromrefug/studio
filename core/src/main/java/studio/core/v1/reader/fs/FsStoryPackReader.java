@@ -139,7 +139,7 @@ public class FsStoryPackReader implements StoryPackReader {
 
                 // Transition will be updated later with the actual action nodes
                 Transition okTransition = null;
-                if (okTransitionActionNodeIndexInLI != -1 && okTransitionNumberOfOptions != -1 && okTransitionSelectedOptionIndex != -1) {
+                if (okTransitionNumberOfOptions != -1) {
                     if (!actionNodesOptionsCount.containsKey(okTransitionActionNodeIndexInLI)) {
                         actionNodesOptionsCount.put(okTransitionActionNodeIndexInLI, okTransitionNumberOfOptions);
                     }
@@ -149,7 +149,7 @@ public class FsStoryPackReader implements StoryPackReader {
                     transitionsWithAction.put(okTransitionActionNodeIndexInLI, twa);
                 }
                 Transition homeTransition = null;
-                if (homeTransitionActionNodeIndexInLI != -1 && homeTransitionNumberOfOptions != -1 && homeTransitionSelectedOptionIndex != -1) {
+                if (homeTransitionNumberOfOptions != -1) {
                     if (!actionNodesOptionsCount.containsKey(homeTransitionActionNodeIndexInLI)) {
                         actionNodesOptionsCount.put(homeTransitionActionNodeIndexInLI, homeTransitionNumberOfOptions);
                     }
