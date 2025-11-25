@@ -190,6 +190,65 @@ export const actionAddFromLibrary = (uuid, path, format, driver, context, t) => 
             });
 };
 
+
+export const actionAddFromLibraryAndWait = (uuid, path, format, driver, context, t) => {
+    return dispatch => mutex.acquire()
+        .then(
+            release => {
+                // First, make sure the story pack is in the right format.
+                if (driver !== format) {
+                    console.error('pack format is not compatible with the device');
+                    toast.error(t('toasts.device.notCompatible'));
+                    // Always release the mutex
+                    release();
+                } else {
+                    // Then start transfer
+                    let toastId = toast(t('toasts.device.adding'), { autoClose: false });
+                    return addFromLibrary(uuid, path)
+                        .then(resp => {
+                            return new Promise((resolve, reject) => {
+                                // Monitor transfer progress
+                                let transferId = resp.transferId;
+                                context.eventBus.registerHandler('storyteller.transfer.'+transferId+'.progress', (error, message) => {
+                                    console.log("Received `storyteller.transfer."+transferId+".progress` event from vert.x event bus.");
+                                    console.log(message.body);
+                                    if (message.body.progress < 1) {
+                                        toast.update(toastId, {progress: message.body.progress, autoClose: false});
+                                    }
+                                });
+                                context.eventBus.registerHandler('storyteller.transfer.'+transferId+'.done', (error, message) => {
+                                    console.log("Received `storyteller.transfer."+transferId+".done` event from vert.x event bus.");
+                                    console.log(message.body);
+                                    if (message.body.success) {
+                                        toast.update(toastId, {progress: null, type: toast.TYPE.SUCCESS, render: t('toasts.device.added'), autoClose: 5000});
+                                        // Refresh device metadata and packs list
+                                        dispatch(actionRefreshDevice(t));
+                                    } else {
+                                        toast.update(toastId, {progress: null, type: toast.TYPE.ERROR, render: <IssueReportToast content={<>{t('toasts.device.addingFailed')}</>} />, autoClose: false });
+                                    }
+                                    // Always release the mutex
+                                    resolve();
+                                });
+
+                            });
+                        })
+                        .then(()=>{
+                            release();
+                        })
+                        .catch(e => {
+                            console.error('failed to add pack to device', e);
+                            toast.update(toastId, { type: toast.TYPE.ERROR, render: <IssueReportToast content={<>{t('toasts.device.addingFailed')}</>} error={e} />, autoClose: false });
+                            // Always release the mutex
+                            release();
+                        });
+                }
+            },
+            e => {
+                // Device is busy
+                toast.error(t('toasts.device.busy'));
+            });
+};
+
 export const actionRemoveFromDevice = (uuid, t) => {
     return dispatch => mutex.acquire()
         .then(
